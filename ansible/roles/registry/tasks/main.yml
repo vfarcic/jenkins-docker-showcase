@@ -1,0 +1,17 @@
+- name: Directories are present
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /data
+    - /data/registry
+  tags: [registry]
+
+- name: Container is running
+  docker:
+    name: registry
+    image: registry
+    ports: 5000:5000
+    volumes:
+      - /vagrant/registry:/tmp/registry
+  tags: [registry]

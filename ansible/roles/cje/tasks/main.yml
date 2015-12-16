@@ -1,0 +1,75 @@
+- name: Directory is created
+  file:
+    path: /data/jenkins
+    state: directory
+    owner: vagrant
+  tags: [jenkins]
+
+- name: Container is running
+  docker:
+    name: jenkins
+    image: cloudbees/jenkins-enterprise
+    ports: "8080:8080"
+    volumes:
+      - /data/jenkins:/var/jenkins_home
+      - /vagrant/.vagrant/machines:/machines
+  register: jenkins_result
+  tags: [jenkins]
+
+- pause:
+    prompt: "Make sure that CJE in http://{{ facter_ipaddress_eth1 }}:8080 is licenced. Press any key when finished."
+  when: jenkins_result|changed
+
+- name: Configuration directories are created
+  file:
+    path: "{{ item.dir }}"
+    state: directory
+    owner: vagrant
+    recurse: yes
+  with_items: configs
+  tags: [jenkins]
+
+- name: Configurations are present
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dir }}/{{ item.file }}"
+    owner: vagrant
+    mode: 0777
+  register: configs_result
+  with_items: configs
+  tags: [jenkins]
+
+- name: Jenkins is reloaded
+  uri:
+    url: http://{{ facter_ipaddress_eth1 }}:8080/reload
+    method: POST
+    status_code: 200,302
+  when: configs_result|changed
+  ignore_errors: yes
+  tags: [jenkins]
+
+- name: Plugins are installed
+  shell: "curl -X POST \
+    -d '<jenkins><install plugin=\"{{ item }}@latest\" /></jenkins>' \
+    --header 'Content-Type: text/xml' \
+    http://{{ facter_ipaddress_eth1 }}:8080/pluginManager/installNecessaryPlugins"
+  args:
+    creates: /data/jenkins/plugins/{{ item }}
+  with_items: plugins
+  register: plugins_result
+  tags: [jenkins]
+
+- wait_for:
+    path: /data/jenkins/plugins/{{ item }}
+  with_items: plugins
+
+- name: Container is restarted
+  docker:
+    name: jenkins
+    image: jenkins
+    state: restarted
+  when: plugins_result|changed
+  tags: [jenkins]
+
+- debug:
+    msg: "Please open http://{{ facter_ipaddress_eth1 }}:8080"

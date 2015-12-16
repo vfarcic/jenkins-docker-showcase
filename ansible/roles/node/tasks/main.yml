@@ -1,0 +1,12 @@
+- name: Packages are installed
+  apt:
+    name: "{{ item }}"
+  with_items: packages
+  tags: [cje]
+
+- name: Directory is created
+  file:
+    path: /data/jenkins_slave
+    owner: vagrant
+    state: directory
+  tags: [cje]

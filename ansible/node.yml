@@ -1,0 +1,8 @@
+- hosts: jenkins-node
+  remote_user: vagrant
+  sudo: yes
+  serial: 1
+  roles:
+    - docker
+    - java
+    - node
