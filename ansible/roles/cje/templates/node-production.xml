@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<slave>
+    <name>{{ item.node_name }}</name>
+    <description></description>
+    <remoteFS>/data/jenkins_slave</remoteFS>
+    <numExecutors>3</numExecutors>
+    <mode>NORMAL</mode>
+    <retentionStrategy class="hudson.slaves.RetentionStrategy$Always"/>
+    <launcher class="hudson.plugins.sshslaves.SSHLauncher" plugin="ssh-slaves@1.10">
+        <host>{{ item.ip }}</host>
+        <port>22</port>
+        <credentialsId>e2888e67-675a-4d80-850a-41c825c72bac</credentialsId>
+        <maxNumRetries>0</maxNumRetries>
+        <retryWaitTime>0</retryWaitTime>
+    </launcher>
+    <label>docker production</label>
+    <nodeProperties/>
+    <userId>anonymous</userId>
+</slave>

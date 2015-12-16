@@ -4,5 +4,6 @@
   serial: 1
   roles:
     - docker
+    - docker-compose
     - java
     - node

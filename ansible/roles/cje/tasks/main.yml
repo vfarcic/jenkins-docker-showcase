@@ -25,6 +25,7 @@
     path: "{{ item.dir }}"
     state: directory
     owner: vagrant
+    mode: 0777
     recurse: yes
   with_items: configs
   tags: [jenkins]

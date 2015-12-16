@@ -10,3 +10,11 @@
     owner: vagrant
     state: directory
   tags: [cje]
+
+- name: DB directory is created
+  file:
+    path: /data/jenkins_slave/workspace/books-ms-build/db
+    recurse: yes
+    mode: 0777
+    state: directory
+  tags: [cje]

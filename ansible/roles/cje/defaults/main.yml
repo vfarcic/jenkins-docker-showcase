@@ -1,9 +1,12 @@
 configs: [
   { src: "credentials.xml", dir: "/data/jenkins", file: "credentials.xml" },
-  { src: "node.xml", dir: "/data/jenkins/nodes/node-1", file: "config.xml", ip: "10.100.199.201", node_name: "node-1" },
-  { src: "node.xml", dir: "/data/jenkins/nodes/node-2", file: "config.xml", ip: "10.100.199.202", node_name: "node-2" },
+  { src: "node-production.xml", dir: "/data/jenkins/nodes/node-production", file: "config.xml", ip: "10.100.199.201", node_name: "node-production" },
+  { src: "node-cd.xml", dir: "/data/jenkins/nodes/node-cd", file: "config.xml", ip: "10.100.199.202", node_name: "node-cd" },
   { src: "node.xml", dir: "/data/jenkins/nodes/node-3", file: "config.xml", ip: "10.100.199.203", node_name: "node-3" },
-  { src: "books-ms-docker-config.xml", dir: "/data/jenkins/jobs/books-ms", file: "config.xml" }
+  { src: "books-ms-build-config.xml", dir: "/data/jenkins/jobs/books-ms-build", file: "config.xml" },
+  { src: "books-ms-push-config.xml", dir: "/data/jenkins/jobs/books-ms-push", file: "config.xml" },
+  { src: "books-ms-deploy-config.xml", dir: "/data/jenkins/jobs/books-ms-deploy", file: "config.xml" },
+  { src: "books-ms-integrate-config.xml", dir: "/data/jenkins/jobs/books-ms-integrate", file: "config.xml" }
 ]
 
 plugins:
