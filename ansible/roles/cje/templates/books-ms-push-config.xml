@@ -47,7 +47,7 @@
     <com.cloudbees.dockerpublish.DockerBuilder plugin="docker-build-publish@1.0.1">
       <server plugin="docker-commons@1.2"/>
       <registry plugin="docker-commons@1.2"/>
-      <repoName>10.100.198.201:5000/books-ms</repoName>
+      <repoName>10.100.198.200:5000/books-ms</repoName>
       <noCache>false</noCache>
       <forcePull>true</forcePull>
       <dockerfilePath></dockerfilePath>
@@ -59,6 +59,19 @@
       <skipTagLatest>false</skipTagLatest>
     </com.cloudbees.dockerpublish.DockerBuilder>
   </builders>
-  <publishers/>
+  <publishers>
+    <hudson.plugins.parameterizedtrigger.BuildTrigger plugin="parameterized-trigger@2.29">
+      <configs>
+        <hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+          <configs>
+            <hudson.plugins.parameterizedtrigger.CurrentBuildParameters/>
+          </configs>
+          <projects>books-ms-deploy,</projects>
+          <condition>SUCCESS</condition>
+          <triggerWithNoParameters>false</triggerWithNoParameters>
+        </hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+      </configs>
+    </hudson.plugins.parameterizedtrigger.BuildTrigger>
+  </publishers>
   <buildWrappers/>
 </project>

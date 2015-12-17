@@ -40,15 +40,6 @@
   with_items: configs
   tags: [jenkins]
 
-- name: Jenkins is reloaded
-  uri:
-    url: http://{{ facter_ipaddress_eth1 }}:8080/reload
-    method: POST
-    status_code: 200,302
-  when: configs_result|changed
-  ignore_errors: yes
-  tags: [jenkins]
-
 - name: Plugins are installed
   shell: "curl -X POST \
     -d '<jenkins><install plugin=\"{{ item }}@latest\" /></jenkins>' \
@@ -64,13 +55,9 @@
     path: /data/jenkins/plugins/{{ item }}
   with_items: plugins
 
-- name: Container is restarted
-  docker:
-    name: jenkins
-    image: jenkins
-    state: restarted
-  when: plugins_result|changed
-  tags: [jenkins]
+- name: Jenkins is restarted
+  shell: "curl -X POST http://{{ facter_ipaddress_eth1 }}:8080/safeRestart"
+  when: configs_result|changed or plugins_result|changed
 
 - debug:
     msg: "Please open http://{{ facter_ipaddress_eth1 }}:8080"

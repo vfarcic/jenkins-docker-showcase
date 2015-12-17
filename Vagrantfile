@@ -9,12 +9,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.define "cje" do |d|
     d.vm.box = "ubuntu/trusty64"
     d.vm.hostname = "cje"
-    d.vm.network "private_network", ip: "10.100.198.201"
+    d.vm.network "private_network", ip: "10.100.198.200"
     d.vm.provision :shell, path: "bootstrap_ansible.sh"
-    d.vm.provision :shell, inline: "PYTHONUNBUFFERED=1 ansible-playbook /vagrant/ansible/cje.yml -c local"
-    d.vm.provision :shell, inline: "sample_containers.sh"
     d.vm.provider "virtualbox" do |v|
-      v.memory = 2048
+      v.memory = 1536
     end
   end
   (1..3).each do |i|
@@ -23,7 +21,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       d.vm.hostname = "node-#{i}"
       d.vm.network "private_network", ip: "10.100.199.20#{i}"
       d.vm.provider "virtualbox" do |v|
-        v.memory = 2048
+        v.memory = 1536
       end
     end
   end

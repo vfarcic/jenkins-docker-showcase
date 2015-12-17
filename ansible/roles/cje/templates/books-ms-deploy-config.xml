@@ -34,7 +34,7 @@
   <builders>
     <hudson.plugins.copyartifact.CopyArtifact plugin="copyartifact@1.37">
       <project>books-ms-build</project>
-      <filter>docker-compose*.yml</filter>
+      <filter></filter>
       <target></target>
       <excludes></excludes>
       <selector class="hudson.plugins.copyartifact.SpecificBuildSelector">
@@ -43,11 +43,13 @@
       <doNotFingerprintArtifacts>false</doNotFingerprintArtifacts>
     </hudson.plugins.copyartifact.CopyArtifact>
     <org.jenkinsci.plugins.dockerhub.notification.DockerPullImageBuilder plugin="dockerhub-notification@1.0.2">
-      <image>10.100.198.201:5000/books-ms</image>
+      <image>10.100.198.200:5000/books-ms</image>
       <registry plugin="docker-commons@1.2"/>
     </org.jenkinsci.plugins.dockerhub.notification.DockerPullImageBuilder>
     <hudson.tasks.Shell>
-      <command>docker-compose -f docker-compose-dev.yml up app</command>
+      <command>docker-compose -f docker-compose-dev.yml -p books-ms up -d app
+curl http://10.100.198.200:8080/docker-traceability/submitContainerStatus \
+    --data-urlencode inspectData="$(docker inspect booksms_app_1)"</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers>

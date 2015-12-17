@@ -34,7 +34,7 @@
   <builders>
     <hudson.plugins.copyartifact.CopyArtifact plugin="copyartifact@1.37">
       <project>books-ms-build</project>
-      <filter>src/**</filter>
+      <filter></filter>
       <target></target>
       <excludes></excludes>
       <selector class="hudson.plugins.copyartifact.SpecificBuildSelector">
@@ -44,15 +44,16 @@
     </hudson.plugins.copyartifact.CopyArtifact>
     <hudson.tasks.Shell>
       <command>export TEST_TYPE=integ
-export DOMAIN=10.100.199.201
-./run.sh</command>
+export DOMAIN=http://10.100.199.201:8080
+chmod +x run_tests.sh
+./run_tests.sh</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers/>
   <buildWrappers>
     <com.cloudbees.jenkins.plugins.okidocki.DockerBuildWrapper plugin="docker-custom-build-environment@1.6.4">
       <selector class="com.cloudbees.jenkins.plugins.okidocki.PullDockerImageSelector">
-        <image>10.100.198.201:5000/books-ms-tests</image>
+        <image>10.100.198.200:5000/books-ms-tests</image>
       </selector>
       <dockerHost plugin="docker-commons@1.2"/>
       <dockerRegistryCredentials></dockerRegistryCredentials>

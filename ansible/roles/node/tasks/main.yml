@@ -13,7 +13,7 @@
 
 - name: DB directory is created
   file:
-    path: /data/jenkins_slave/workspace/books-ms-build/db
+    path: /data/jenkins_slave/workspace/docker-pipeline/books-ms-build/db
     recurse: yes
     mode: 0777
     state: directory

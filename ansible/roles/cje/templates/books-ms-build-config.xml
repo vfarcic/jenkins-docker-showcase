@@ -58,26 +58,31 @@
   </builders>
   <publishers>
     <hudson.tasks.ArtifactArchiver>
-      <artifacts>target/scala-2.10/*.jar, run.sh, client/components/**, Dockerfile, docker-compose*.yml</artifacts>
+      <artifacts>target/scala-2.10/*.jar, run*.sh, build.sbt, client/components/**, Dockerfile, docker-compose*.yml, src/**, project/**</artifacts>
       <allowEmptyArchive>false</allowEmptyArchive>
       <onlyIfSuccessful>false</onlyIfSuccessful>
       <fingerprint>false</fingerprint>
       <defaultExcludes>true</defaultExcludes>
     </hudson.tasks.ArtifactArchiver>
-    <hudson.tasks.BuildTrigger>
-      <childProjects>books-ms-push</childProjects>
-      <threshold>
-        <name>SUCCESS</name>
-        <ordinal>0</ordinal>
-        <color>BLUE</color>
-        <completeBuild>true</completeBuild>
-      </threshold>
-    </hudson.tasks.BuildTrigger>
+    <hudson.plugins.parameterizedtrigger.BuildTrigger plugin="parameterized-trigger@2.29">
+      <configs>
+        <hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+          <configs>
+            <hudson.plugins.parameterizedtrigger.PredefinedBuildParameters>
+              <properties>INITIAL_BUILD_NUMBER=${BUILD_NUMBER}</properties>
+            </hudson.plugins.parameterizedtrigger.PredefinedBuildParameters>
+          </configs>
+          <projects>books-ms-push</projects>
+          <condition>SUCCESS</condition>
+          <triggerWithNoParameters>false</triggerWithNoParameters>
+        </hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+      </configs>
+    </hudson.plugins.parameterizedtrigger.BuildTrigger>
   </publishers>
   <buildWrappers>
     <com.cloudbees.jenkins.plugins.okidocki.DockerBuildWrapper plugin="docker-custom-build-environment@1.6.4">
       <selector class="com.cloudbees.jenkins.plugins.okidocki.PullDockerImageSelector">
-        <image>10.100.198.201:5000/books-ms-tests</image>
+        <image>10.100.198.200:5000/books-ms-tests</image>
       </selector>
       <dockerHost plugin="docker-commons@1.2"/>
       <dockerRegistryCredentials></dockerRegistryCredentials>
