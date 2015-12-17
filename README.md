@@ -29,4 +29,10 @@ curl http://10.100.198.200:8080/docker-traceability/submitContainerStatus \
 curl -XGET 'http://10.100.198.200:8080/checkJobName?value=docker-pipeline'
 
 vagrant destroy -f
+
+
+
+
+
+stash includes: 'target/scala-2.10/*.jar, run*.sh, build.sbt, client/components/**, Dockerfile, docker-compose*.yml, src/**, project/**', name: 'artifacts'
 ```

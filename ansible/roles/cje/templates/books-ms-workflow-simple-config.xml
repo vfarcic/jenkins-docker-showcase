@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@1.11">
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <org.jenkinsci.plugins.workflow.job.properties.BuildDiscarderProperty>
+      <strategy class="hudson.tasks.LogRotator">
+        <daysToKeep>-1</daysToKeep>
+        <numToKeep>25</numToKeep>
+        <artifactDaysToKeep>-1</artifactDaysToKeep>
+        <artifactNumToKeep>-1</artifactNumToKeep>
+      </strategy>
+    </org.jenkinsci.plugins.workflow.job.properties.BuildDiscarderProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>SERVICE_NAME</name>
+          <description></description>
+          <defaultValue>books-ms</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>REGISTRY_IP</name>
+          <description></description>
+          <defaultValue>10.100.198.200:5000</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>PRODUCTION_IP</name>
+          <description></description>
+          <defaultValue>10.100.199.201</defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@1.11">
+    <script>def serviceName = SERVICE_NAME
+def registryIp = REGISTRY_IP
+def productionIp = PRODUCTION_IP
+
+node(&quot;cd&quot;) {
+    def dir = pwd()
+    sh &quot;mkdir -p ${dir}/db&quot;
+    stage &quot;pre-deployment tests&quot;
+    def tests = docker.image(&quot;${registryIp}/${serviceName}-tests&quot;)
+    tests.pull()
+    tests.inside(&quot;-v ${dir}/db:/data/db&quot;) {
+        git &quot;https://github.com/vfarcic/${serviceName}.git&quot;
+        sh &quot;./run_tests.sh&quot;
+    }
+    stage &quot;build&quot;
+    def service = docker.build &quot;${registryIp}/${serviceName}&quot;
+    service.push()
+    stash includes: &quot;docker-compose*.yml&quot;, name: &quot;docker-compose&quot;
+}
+node(&quot;production&quot;) {
+    stage &quot;deploy&quot;
+    unstash &quot;docker-compose&quot;
+    def service = docker.image(&quot;${registryIp}/${serviceName}&quot;)
+    service.pull()
+    sh &quot;docker-compose -f docker-compose-dev.yml -p ${serviceName} up -d app&quot;
+}
+node(&quot;cd&quot;) {
+    stage &quot;post-deployment tests&quot;
+    def tests = docker.image(&quot;${registryIp}/${serviceName}-tests&quot;)
+    tests.inside() {
+        withEnv([&quot;TEST_TYPE=integ&quot;, &quot;DOMAIN=http://${productionIp}:8080&quot;]) {
+            sh &quot;./run_tests.sh&quot;
+        }
+    }
+}</script>
+    <sandbox>false</sandbox>
+  </definition>
+  <triggers/>
+</flow-definition>
