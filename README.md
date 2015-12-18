@@ -3,9 +3,9 @@ vagrant up
 
 vagrant ssh cje
 
-ansible-playbook /vagrant/ansible/cje.yml -c local
-
 ansible-playbook /vagrant/ansible/node.yml -i /vagrant/ansible/hosts/dev
+
+ansible-playbook /vagrant/ansible/cje.yml -c local
 
 exit
 
@@ -23,16 +23,46 @@ docker push 10.100.198.200:5000/books-ms-tests
 ```bash
 curl -I 10.100.199.201:8080/api/v1/books
 
-curl http://10.100.198.200:8080/docker-traceability/submitContainerStatus \
-    --data-urlencode inspectData="$(docker inspect booksms_app_1)"
+exit
 
-curl -XGET 'http://10.100.198.200:8080/checkJobName?value=docker-pipeline'
+vagrant ssh node-1
 
+docker ps
+
+docker rm -f booksms_app_1 booksms_db_1
+
+exit
+```
+
+* books-ms-workflow-simple
+
+```bash
+curl -I 10.100.199.201:8080/api/v1/books
+
+vagrant ssh node-1
+
+docker ps
+
+docker rm -f booksms_app_1 booksms_db_1
+
+exit
+
+vagrant ssh cje
+
+curl 10.100.199.201:8500/v1/catalog/nodes \
+    | jq '.'
+```
+
+Open [http://10.100.199.201:8500](http://10.100.199.201:8500)
+
+```bash
+export DOCKER_HOST=tcp://10.100.199.201:2375
+
+docker info
+```
+
+* books-ms-workflow
+
+```bash
 vagrant destroy -f
-
-
-
-
-
-stash includes: 'target/scala-2.10/*.jar, run*.sh, build.sbt, client/components/**, Dockerfile, docker-compose*.yml, src/**, project/**', name: 'artifacts'
 ```

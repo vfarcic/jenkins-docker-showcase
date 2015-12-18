@@ -3,6 +3,7 @@
   sudo: yes
   serial: 1
   roles:
+    - common
     - docker
     - registry
     - cje

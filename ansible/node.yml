@@ -2,8 +2,17 @@
   remote_user: vagrant
   sudo: yes
   serial: 1
+  vars:
+    - debian_version: vivid
+    - docker_cfg_dest: /lib/systemd/system/docker.service
+    - is_systemd: true
   roles:
+    - common
     - docker
     - docker-compose
     - java
+    - consul
+    - consul-template
+    - registrator
+    - swarm
     - node

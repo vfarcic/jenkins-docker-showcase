@@ -40,6 +40,7 @@ def productionIp = PRODUCTION_IP
 node(&quot;cd&quot;) {
     def dir = pwd()
     sh &quot;mkdir -p ${dir}/db&quot;
+    sh &quot;chmod 0777 ${dir}/db&quot;
     stage &quot;pre-deployment tests&quot;
     def tests = docker.image(&quot;${registryIp}/${serviceName}-tests&quot;)
     tests.pull()
