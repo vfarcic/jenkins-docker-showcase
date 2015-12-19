@@ -1,3 +1,6 @@
 [jenkins-node]
 10.100.199.201 swarm_master=true consul_extra="-server -bootstrap -ui-dir /ui" docker_cfg=docker-swarm-master.service
 10.100.199.20[2:3] consul_extra="-join 10.100.199.201" docker_cfg=docker-swarm-node.service
+
+[nginx]
+10.100.199.201

@@ -15,32 +15,38 @@
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
-          <name>SERVICE_NAME</name>
+          <name>serviceName</name>
           <description></description>
           <defaultValue>books-ms</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-          <name>REGISTRY_IP</name>
+          <name>registryIp</name>
           <description></description>
           <defaultValue>10.100.198.200:5000</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-          <name>PRODUCTION_IP</name>
+          <name>swarmIp</name>
           <description></description>
           <defaultValue>10.100.199.201</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-          <name>SWARM_IP</name>
+          <name>proxyIp</name>
           <description></description>
           <defaultValue>10.100.199.201</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>instances</name>
+          <description></description>
+          <defaultValue>0</defaultValue>
         </hudson.model.StringParameterDefinition>
       </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
   </properties>
   <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@1.11">
-    <script>def serviceName = SERVICE_NAME
-def registryIp = REGISTRY_IP
-def productionIp = PRODUCTION_IP
+    <script>import groovy.json.JsonSlurper
+
+def currentColor = getCurrentColor(swarmIp, serviceName)
+def nextColor = getNextColor(currentColor)
 
 node(&quot;cd&quot;) {
     def dir = pwd()
@@ -55,27 +61,107 @@ node(&quot;cd&quot;) {
         sh &quot;./run_tests.sh&quot;
     }
     
-    stage &quot;build&quot;
+    stage &quot;building&quot;
     def service = docker.build &quot;${registryIp}/${serviceName}&quot;
     service.push()
-    stash includes: &quot;docker-compose*.yml&quot;, name: &quot;docker-compose&quot;
-}
-node(&quot;production&quot;) {
-    stage &quot;deploy&quot;
-    unstash &quot;docker-compose&quot;
-    def service = docker.image(&quot;${registryIp}/${serviceName}&quot;)
-    service.pull()
-    sh &quot;docker-compose -f docker-compose-dev.yml -p ${serviceName} up -d app&quot;
-}
-node(&quot;cd&quot;) {
+
+    stage &quot;deployment&quot;
+    def instances = getInstances(swarmIp, serviceName)
+    withEnv([&quot;DOCKER_HOST=tcp://${swarmIp}:2375&quot;]) {
+        sh &quot;docker-compose -f docker-compose-swarm.yml -p books-ms --x-networking up -d db&quot;
+        sh &quot;docker-compose -f docker-compose-swarm.yml -p books-ms rm -f app-${nextColor}&quot;
+        sh &quot;docker-compose -f docker-compose-swarm.yml -p books-ms --x-networking scale app-${nextColor}=$instances&quot;
+    }
+    sh &quot;curl -X PUT -d ${instances} http://${swarmIp}:8500/v1/kv/${serviceName}/instances&quot;
+
     stage &quot;post-deployment tests&quot;
-    def tests = docker.image(&quot;${registryIp}/${serviceName}-tests&quot;)
-    tests.inside() {
-        withEnv([&quot;TEST_TYPE=integ&quot;, &quot;DOMAIN=http://${productionIp}:8080&quot;]) {
-            sh &quot;./run_tests.sh&quot;
+    def address = getAddress(swarmIp, serviceName, nextColor)
+    try {
+        retry(2) {
+            docker.image(&quot;${registryIp}/${serviceName}-tests&quot;).inside() {
+                withEnv([&quot;TEST_TYPE=integ&quot;, &quot;DOMAIN=http://${address}&quot;]) {
+                    sh &quot;./run_tests.sh&quot;
+                }
+            }
+        }
+    } catch (e) {
+        withEnv([&quot;DOCKER_HOST=tcp://${swarmIp}:2375&quot;]) {
+            sh &quot;docker-compose -f docker-compose-swarm.yml -p books-ms stop app-${nextColor}&quot;
+        }
+        error(&quot;Pre-integration tests failed&quot;)
+    }
+    
+    stage &quot;integration&quot;
+    updateProxy(swarmIp, serviceName, nextColor);
+    
+    stage &quot;post-integration tests&quot;
+    try {
+        docker.image(&quot;${registryIp}/${serviceName}-tests&quot;).inside() {
+            withEnv([&quot;TEST_TYPE=integ&quot;, &quot;DOMAIN=http://${proxyIp}&quot;]) {
+                sh &quot;./run_tests.sh&quot;
+            }
+        }
+    } catch (e) {
+        if (currentColor != &quot;&quot;) {
+            updateProxy(swarmIp, serviceName, currentColor)
+        }
+        withEnv([&quot;DOCKER_HOST=tcp://${swarmIp}:2375&quot;]) {
+            sh &quot;docker-compose -f docker-compose-swarm.yml -p books-ms stop app-${nextColor}&quot;
+        }
+        error(&quot;Post-integration tests failed&quot;)
+    }
+    sh &quot;curl -X PUT -d ${nextColor} http://${swarmIp}:8500/v1/kv/${serviceName}/color&quot;
+    if (currentColor != &quot;&quot;) {
+        withEnv([&quot;DOCKER_HOST=tcp://${swarmIp}:2375&quot;]) {
+            sh &quot;docker-compose -f docker-compose-swarm.yml stop app-${currentColor}&quot;
         }
     }
-}</script>
+}
+
+def getInstances(swarmIp, service) {
+    if (instances.toInteger() == 0) {
+        try {
+            instances = &quot;http://${swarmIp}:8500/v1/kv/${service}/instances?raw&quot;.toURL().text
+        } catch (e) {
+            return 1
+        }
+    }
+    return instances.toInteger()
+}
+
+def getCurrentColor(swarmIp, serviceName) {
+    try {
+        return &quot;http://${swarmIp}:8500/v1/kv/${serviceName}/color?raw&quot;.toURL().text
+    } catch(e) {
+        return &quot;&quot;
+    }
+}
+
+def getNextColor(currentColor) {
+    if (currentColor == &quot;blue&quot;) {
+        return &quot;green&quot;
+    } else {
+        return &quot;blue&quot;
+    }
+}
+
+def getAddress(swarmIp, serviceName, color) {
+    def serviceJson = &quot;http://${swarmIp}:8500/v1/catalog/service/${serviceName}-${color}&quot;.toURL().text
+    def result = new JsonSlurper().parseText(serviceJson)[0]
+    return result.ServiceAddress + &quot;:&quot; + result.ServicePort
+}
+
+def updateProxy(swarmIp, serviceName, color) {
+    sh &quot;consul-template -consul ${swarmIp}:8500 -template &apos;nginx-upstreams-${color}.ctmpl:nginx-upstreams.conf&apos; -once&quot;
+    stash includes: &apos;nginx-*.conf&apos;, name: &apos;nginx&apos;
+    node(&quot;proxy&quot;) {
+        unstash &apos;nginx&apos;
+        sh &quot;sudo cp nginx-includes.conf /data/nginx/includes/${serviceName}.conf&quot;
+        sh &quot;sudo cp nginx-upstreams.conf /data/nginx/upstreams/${serviceName}.conf&quot;
+        sh &quot;docker kill -s HUP nginx&quot;
+    }
+}
+</script>
     <sandbox>false</sandbox>
   </definition>
   <triggers/>

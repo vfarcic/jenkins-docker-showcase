@@ -59,6 +59,10 @@ Open [http://10.100.199.201:8500](http://10.100.199.201:8500)
 export DOCKER_HOST=tcp://10.100.199.201:2375
 
 docker info
+
+docker ps
+
+curl -I 10.100.199.201/api/v1/books
 ```
 
 * books-ms-workflow

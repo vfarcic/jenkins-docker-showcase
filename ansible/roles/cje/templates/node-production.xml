@@ -13,7 +13,7 @@
         <maxNumRetries>0</maxNumRetries>
         <retryWaitTime>0</retryWaitTime>
     </launcher>
-    <label>docker production</label>
+    <label>docker production proxy</label>
     <nodeProperties/>
     <userId>anonymous</userId>
 </slave>
