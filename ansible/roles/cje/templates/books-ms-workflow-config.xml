@@ -50,10 +50,10 @@ def nextColor = getNextColor(currentColor)
 
 node(&quot;cd&quot;) {
     def dir = pwd()
+    git &quot;https://github.com/vfarcic/${serviceName}.git&quot;
     sh &quot;mkdir -p ${dir}/db&quot;
     sh &quot;chmod 777 ${dir}/db&quot;
-    git &quot;https://github.com/vfarcic/${serviceName}.git&quot;
-    
+
     stage &quot;pre-deployment tests&quot;
     def tests = docker.image(&quot;${registryIp}/${serviceName}-tests&quot;)
     tests.pull()
@@ -77,11 +77,9 @@ node(&quot;cd&quot;) {
     stage &quot;post-deployment tests&quot;
     def address = getAddress(swarmIp, serviceName, nextColor)
     try {
-        retry(2) {
-            docker.image(&quot;${registryIp}/${serviceName}-tests&quot;).inside() {
-                withEnv([&quot;TEST_TYPE=integ&quot;, &quot;DOMAIN=http://${address}&quot;]) {
-                    sh &quot;./run_tests.sh&quot;
-                }
+        docker.image(&quot;${registryIp}/${serviceName}-tests&quot;).inside() {
+            withEnv([&quot;TEST_TYPE=integ&quot;, &quot;DOMAIN=http://${address}&quot;]) {
+                sh &quot;./run_tests.sh&quot;
             }
         }
     } catch (e) {
@@ -113,7 +111,7 @@ node(&quot;cd&quot;) {
     sh &quot;curl -X PUT -d ${nextColor} http://${swarmIp}:8500/v1/kv/${serviceName}/color&quot;
     if (currentColor != &quot;&quot;) {
         withEnv([&quot;DOCKER_HOST=tcp://${swarmIp}:2375&quot;]) {
-            sh &quot;docker-compose -f docker-compose-swarm.yml stop app-${currentColor}&quot;
+            sh &quot;docker-compose -f docker-compose-swarm.yml -p books-ms stop app-${currentColor}&quot;
         }
     }
 }

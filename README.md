@@ -68,5 +68,9 @@ curl -I 10.100.199.201/api/v1/books
 * books-ms-workflow
 
 ```bash
-vagrant destroy -f
+ansible-playbook /vagrant/ansible/nginx.yml -i /vagrant/ansible/hosts/dev
+
+docker ps -a | grep books
+
+curl -I 10.100.199.201/api/v1/books
 ```
