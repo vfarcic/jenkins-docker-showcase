@@ -9,4 +9,5 @@
   roles:
     - common
     - docker
+    - consul
     - nginx

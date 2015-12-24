@@ -1,3 +1,35 @@
+Preload
+=======
+
+```bash
+git clone https://github.com/vfarcic/jenkins-docker-showcase.git
+
+cd jenkins-docker-showcase
+
+vagrant up cje node-1 node-2 node-3
+
+vagrant ssh cje -c "chmod +x /vagrant/scripts/*"
+
+vagrant ssh cje -c "ansible-playbook /vagrant/ansible/cje.yml -c local --extra-vars 'skip_licence=true'"
+
+vagrant ssh cje -c "/vagrant/scripts/preload_cje.sh"
+
+vagrant ssh cje -c "ansible-playbook /vagrant/ansible/node.yml -i /vagrant/ansible/hosts/dev" # Answer "yes" when asked
+
+vagrant ssh cje -c "ansible-playbook /vagrant/ansible/nginx.yml -i /vagrant/ansible/hosts/dev" # Answer "yes" when asked
+
+vagrant ssh node-1 -c "/vagrant/scripts/preload_node.sh"
+
+vagrant ssh node-2 -c "/vagrant/scripts/preload_node.sh"
+
+vagrant ssh node-3 -c "/vagrant/scripts/preload_node.sh"
+
+vagrant halt
+```
+
+Setup
+=====
+
 ```bash
 vagrant up
 

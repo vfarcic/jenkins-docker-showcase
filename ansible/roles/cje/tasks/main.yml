@@ -18,7 +18,7 @@
 
 - pause:
     prompt: "Make sure that CJE in http://{{ facter_ipaddress_eth1 }}:8080 is licenced. Press any key when finished."
-  when: jenkins_result|changed
+  when: jenkins_result|changed and not skip_licence is defined
 
 - name: Configuration directories are created
   file:
@@ -28,6 +28,7 @@
     mode: 0777
     recurse: yes
   with_items: configs
+  when: not skip_licence is defined
   tags: [jenkins]
 
 - name: Configurations are present
@@ -38,6 +39,7 @@
     mode: 0777
   register: configs_result
   with_items: configs
+  when: not skip_licence is defined
   tags: [jenkins]
 
 - name: Plugins are installed
@@ -49,15 +51,18 @@
     creates: /data/jenkins/plugins/{{ item }}
   with_items: plugins
   register: plugins_result
+  when: not skip_licence is defined
   tags: [jenkins]
 
 - wait_for:
     path: /data/jenkins/plugins/{{ item }}
+  when: not skip_licence is defined
   with_items: plugins
 
 - name: Jenkins is restarted
   shell: "curl -X POST http://{{ facter_ipaddress_eth1 }}:8080/safeRestart"
-  when: configs_result|changed or plugins_result|changed
+  when: (configs_result|changed or plugins_result|changed) and not skip_licence is defined
 
 - debug:
     msg: "Please open http://{{ facter_ipaddress_eth1 }}:8080"
+  when: not skip_licence is defined
