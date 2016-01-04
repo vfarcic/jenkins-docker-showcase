@@ -2,16 +2,33 @@
   file:
     path: "{{ item }}"
     state: directory
+    recurse: yes
   with_items:
-    - /data
-    - /data/registry
+    - /data/registry-mirror/conf
   tags: [registry]
 
-- name: Container is running
+- name: Configuration is copied
+  copy:
+    src: mirror-config.yml
+    dest: /data/registry-mirror/conf/config.yml
+  tags: [registry]
+
+- name: Registry container is running
   docker:
     name: registry
     image: registry:2
     ports: 5000:5000
     volumes:
-      - /vagrant/registry:/tmp/registry
+      - /vagrant/registry:/var/lib/registry/docker/registry
+  tags: [registry]
+
+- name: Mirror container is running
+  docker:
+    name: registry-mirror
+    image: registry:2
+    ports: 5001:5000
+    volumes:
+      - /vagrant/registry-mirror:/var/lib/registry/docker/registry
+      - /data/registry-mirror/conf:/conf
+    command: /conf/config.yml
   tags: [registry]
