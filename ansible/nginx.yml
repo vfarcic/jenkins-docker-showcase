@@ -1,4 +1,4 @@
-- hosts: nginx
+- hosts: localhost
   remote_user: vagrant
   sudo: yes
   serial: 1

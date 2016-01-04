@@ -1,3 +1,0 @@
-docker_cfg: docker.cfg
-docker_cfg_dest: /etc/default/docker
-debian_version: trusty

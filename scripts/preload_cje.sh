@@ -2,13 +2,23 @@
 
 set -e
 
+ansible-playbook /vagrant/ansible/cje.yml -c local --extra-vars 'skip_licence=true'
+
+ansible-playbook /vagrant/ansible/node.yml -c local
+
+ansible-playbook /vagrant/ansible/nginx.yml -c local
+
 docker pull vfarcic/books-ms-tests
 
 docker tag vfarcic/books-ms-tests 10.100.198.200:5000/books-ms-tests
 
 docker push 10.100.198.200:5000/books-ms-tests
 
+set +e
+
 git clone https://github.com/vfarcic/books-ms.git
+
+set -e
 
 cd books-ms
 
@@ -27,5 +37,3 @@ docker push 10.100.198.200:5000/books-ms
 docker pull mongo
 
 docker rmi 10.100.198.200:5000/books-ms-tests
-
-ansible-playbook /vagrant/ansible/cje.yml -c local --extra-vars 'skip_licence=true'

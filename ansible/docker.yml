@@ -6,5 +6,7 @@
     - common
     - docker
     - docker-compose
-    - consul-template
+#    - registrator
+#    - consul
+#    - consul-template
     - registry

@@ -8,4 +8,4 @@
       - 8301:8301
       - 8301:8301/udp
       - 8500:8500
-    command: -advertise {{ facter_ipaddress_eth1 }} {{ consul_extra }}
+    command: -advertise {{ facter_ipaddress_eth1 }} -server -bootstrap -ui-dir /ui
