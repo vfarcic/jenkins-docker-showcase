@@ -25,3 +25,7 @@ docker build -t 10.100.198.200:5000/books-ms .
 docker push 10.100.198.200:5000/books-ms
 
 docker pull mongo
+
+docker rmi 10.100.198.200:5000/books-ms-tests
+
+ansible-playbook /vagrant/ansible/cje.yml -c local --extra-vars 'skip_licence=true'

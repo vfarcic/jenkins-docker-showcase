@@ -9,6 +9,7 @@ configs: [
   { src: "books-ms-deploy-config.xml", dir: "/data/jenkins/jobs/docker-pipeline/jobs/books-ms-deploy", file: "config.xml" },
   { src: "books-ms-integrate-config.xml", dir: "/data/jenkins/jobs/docker-pipeline/jobs/books-ms-integrate", file: "config.xml" },
   { src: "books-ms-workflow-simple-config.xml", dir: "/data/jenkins/jobs/books-ms-workflow-simple", file: "config.xml" },
+  { src: "books-ms-workflow-simple-template-config.xml", dir: "/data/jenkins/jobs/books-ms-workflow-simple-template", file: "config.xml" },
   { src: "books-ms-workflow-config.xml", dir: "/data/jenkins/jobs/books-ms-workflow", file: "config.xml" }
 ]
 

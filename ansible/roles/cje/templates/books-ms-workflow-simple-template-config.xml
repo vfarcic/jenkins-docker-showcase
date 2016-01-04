@@ -1,0 +1,97 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<job-template plugin="cloudbees-template@4.19">
+  <actions/>
+  <description></description>
+  <attributes>
+    <template-attribute>
+      <name>name</name>
+      <displayName>Name</displayName>
+      <control class="com.cloudbees.hudson.plugins.modeling.controls.TextFieldControl"/>
+    </template-attribute>
+    <template-attribute>
+      <name>SERVICE_NAME</name>
+      <displayName>Service Name</displayName>
+      <control class="com.cloudbees.hudson.plugins.modeling.controls.TextFieldControl"/>
+    </template-attribute>
+    <template-attribute>
+      <name>REGISTRY</name>
+      <displayName>Registry IP and port</displayName>
+      <control class="com.cloudbees.hudson.plugins.modeling.controls.ChoiceControl">
+        <options>
+          <com.cloudbees.hudson.plugins.modeling.controls.ChoiceControl_-Option>
+            <displayName>10.100.198.200:5000</displayName>
+            <value>10.100.198.200:5000</value>
+            <inlineHelp></inlineHelp>
+          </com.cloudbees.hudson.plugins.modeling.controls.ChoiceControl_-Option>
+        </options>
+        <mode>DROPDOWN_LIST</mode>
+      </control>
+    </template-attribute>
+    <template-attribute>
+      <name>DOMAIN</name>
+      <displayName>Domain</displayName>
+      <control class="com.cloudbees.hudson.plugins.modeling.controls.ChoiceControl">
+        <options>
+          <com.cloudbees.hudson.plugins.modeling.controls.ChoiceControl_-Option>
+            <displayName>http://10.100.199.201:8080</displayName>
+            <value>http://10.100.199.201:8080</value>
+            <inlineHelp></inlineHelp>
+          </com.cloudbees.hudson.plugins.modeling.controls.ChoiceControl_-Option>
+        </options>
+        <mode>DROPDOWN_LIST</mode>
+      </control>
+    </template-attribute>
+  </attributes>
+  <properties/>
+  <instantiable>true</instantiable>
+  <transformer class="com.cloudbees.workflow.template.WorkflowTransformer" plugin="cloudbees-workflow-template@1.6">
+    <template>&lt;flow-definition/&gt;</template>
+    <sandbox>false</sandbox>
+    <script>node(&quot;cd&quot;) {
+    git &quot;https://github.com/vfarcic/${SERVICE_NAME}.git&quot;
+    def dir = pwd()
+    sh &quot;mkdir -p ${dir}/db&quot;
+    sh &quot;chmod 0777 ${dir}/db&quot;
+
+    stage &quot;pre-deployment tests&quot;
+    def tests = docker.image(&quot;${REGISTRY}/${SERVICE_NAME}-tests&quot;)
+    tests.pull()
+    tests.inside(&quot;-v ${dir}/db:/data/db&quot;) {
+        retry(2) {
+            sh &quot;./run_tests.sh&quot;
+        }
+    }
+
+    stage &quot;build&quot;
+    def service = docker.build &quot;${REGISTRY}/${SERVICE_NAME}&quot;
+    service.push()
+    stash includes: &quot;docker-compose*.yml&quot;, name: &quot;docker-compose&quot;
+}
+node(&quot;production&quot;) {
+    stage &quot;deploy&quot;
+    checkpoint &quot;deploy&quot;
+    unstash &quot;docker-compose&quot;
+    input message: &quot;Please confirm deployment to production&quot;, ok: &quot;I confirm&quot;
+    def pull = [:]
+    pull[&quot;service&quot;] = {
+        docker.image(&quot;${REGISTRY}/${SERVICE_NAME}&quot;).pull()
+    }
+    pull[&quot;db&quot;] = {
+        docker.image(&quot;mongo&quot;).pull()
+    }
+    parallel pull
+    sh &quot;docker-compose -f docker-compose-dev.yml -p ${SERVICE_NAME} up -d app&quot;
+    sleep 2
+}
+node(&quot;cd&quot;) {
+    stage &quot;post-deployment tests&quot;
+    def tests = docker.image(&quot;${REGISTRY}/${SERVICE_NAME}-tests&quot;)
+    tests.inside() {
+        withEnv([&quot;TEST_TYPE=integ&quot;, &quot;DOMAIN=${DOMAIN}&quot;]) {
+            sh &quot;./run_tests.sh&quot;
+        }
+    }
+}</script>
+    <scriptSandbox>false</scriptSandbox>
+  </transformer>
+</job-template>
